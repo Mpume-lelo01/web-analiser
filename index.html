@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Website Data Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f361b 0%, #0f0f0f 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #192127 0%, #5c989b 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .analyze-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #0f2b11 0%, #080808 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .option-group:hover {
+            border-color: #2e3133;
+            transform: translateY(-2px);
+        }
+
+        .option-group h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #0c2915;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #09200f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #454746;
+        }
+
+        .result-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #0c2e14;
+            font-size: 1.2em;
+        }
+
+        .links-list, .images-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .link-item, .image-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+
+        .link-item:last-child, .image-item:last-child {
+            border-bottom: none;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #c33;
+            margin-top: 20px;
+        }
+
+        .analysis-summary {
+            background: linear-gradient(135deg, #21442e 0%, #464849 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .analysis-summary h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> AI Website Data Analyzer</h1>
+            <p>Extract and analyze comprehensive data from any website</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="url-input-group">
+                    <input type="url" class="url-input" id="urlInput" placeholder="Enter website URL (e.g., https://example.com)" required>
+                    <button class="analyze-btn" id="analyzeBtn">Analyze Website</button>
+                </div>
+
+                <div class="options">
+                    <div class="option-group">
+                        <h3>📊 Content Analysis</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="textAnalysis" checked>
+                            <label for="textAnalysis">Text Content Analysis</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="headingAnalysis" checked>
+                            <label for="headingAnalysis">Heading Structure</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="metaAnalysis" checked>
+                            <label for="metaAnalysis">Meta Information</label>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <h3>🔗 Link Analysis</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="linkAnalysis" checked>
+                            <label for="linkAnalysis">Extract All Links</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="externalLinks" checked>
+                            <label for="externalLinks">External Links Only</label>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <h3>🖼️ Media Analysis</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="imageAnalysis" checked>
+                            <label for="imageAnalysis">Image Analysis</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="videoAnalysis">
+                            <label for="videoAnalysis">Video Detection</label>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <h3>⚡ Performance</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="performanceAnalysis" checked>
+                            <label for="performanceAnalysis">Load Time Analysis</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" class="checkbox" id="seoAnalysis" checked>
+                            <label for="seoAnalysis">SEO Metrics</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing website data...</p>
+            </div>
+
+            <div class="results" id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        class WebsiteAnalyzer {
+            constructor() {
+                this.analyzeBtn = document.getElementById('analyzeBtn');
+                this.urlInput = document.getElementById('urlInput');
+                this.loading = document.getElementById('loading');
+                this.results = document.getElementById('results');
+                
+                this.init();
+            }
+
+            init() {
+                this.analyzeBtn.addEventListener('click', () => this.analyzeWebsite());
+                this.urlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.analyzeWebsite();
+                });
+            }
+
+            async analyzeWebsite() {
+                const url = this.urlInput.value.trim();
+                if (!url) {
+                    this.showError('Please enter a valid URL');
+                    return;
+                }
+
+                if (!this.isValidUrl(url)) {
+                    this.showError('Please enter a valid URL starting with http:// or https://');
+                    return;
+                }
+
+                this.showLoading();
+                
+                try {
+                    const analysisData = await this.fetchAndAnalyze(url);
+                    this.displayResults(analysisData);
+                } catch (error) {
+                    this.showError(`Analysis failed: ${error.message}`);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            async fetchAndAnalyze(url) {
+                const startTime = performance.now();
+                
+                // Simulate API call - in real implementation, this would call your backend
+                const response = await this.simulateWebsiteAnalysis(url);
+                
+                const endTime = performance.now();
+                response.loadTime = Math.round(endTime - startTime);
+                
+                return response;
+            }
+
+            async simulateWebsiteAnalysis(url) {
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000));
+                
+                // Mock analysis data - in real implementation, this would come from actual scraping
+                return {
+                    url: url,
+                    title: "Sample Website Title",
+                    description: "This is a sample meta description of the analyzed website.",
+                    wordCount: Math.floor(Math.random() * 2000) + 500,
+                    headings: {
+                        h1: Math.floor(Math.random() * 5) + 1,
+                        h2: Math.floor(Math.random() * 10) + 3,
+                        h3: Math.floor(Math.random() * 15) + 5,
+                        h4: Math.floor(Math.random() * 10) + 2
+                    },
+                    links: {
+                        total: Math.floor(Math.random() * 100) + 20,
+                        internal: Math.floor(Math.random() * 60) + 15,
+                        external: Math.floor(Math.random() * 40) + 5,
+                        samples: [
+                            "https://example.com/page1",
+                            "https://external-site.com",
+                            "https://example.com/about",
+                            "https://another-external.com/resource",
+                            "https://example.com/contact"
+                        ]
+                    },
+                    images: {
+                        total: Math.floor(Math.random() * 50) + 10,
+                        withAlt: Math.floor(Math.random() * 30) + 8,
+                        withoutAlt: Math.floor(Math.random() * 20) + 2,
+                        samples: [
+                            "https://example.com/image1.jpg",
+                            "https://example.com/logo.png",
+                            "https://example.com/banner.svg",
+                            "https://example.com/product.webp"
+                        ]
+                    },
+                    videos: Math.floor(Math.random() * 5),
+                    seo: {
+                        hasTitle: true,
+                        hasDescription: true,
+                        hasKeywords: Math.random() > 0.5,
+                        titleLength: Math.floor(Math.random() * 40) + 30,
+                        descriptionLength: Math.floor(Math.random() * 100) + 100
+                    },
+                    performance: {
+                        estimatedSize: `${(Math.random() * 5 + 1).toFixed(1)} MB`,
+                        loadTime: 0, // Will be set by fetchAndAnalyze
+                        compression: Math.random() > 0.7 ? 'Enabled' : 'Not Detected'
+                    }
+                };
+            }
+
+            displayResults(data) {
+                const selectedOptions = this.getSelectedOptions();
+                let html = '';
+
+                // Analysis Summary
+                html += `
+                    <div class="analysis-summary">
+                        <h3>📋 Analysis Summary</h3>
+                        <p><strong>URL:</strong> ${data.url}</p>
+                        <p><strong>Analysis completed in:</strong> ${data.loadTime}ms</p>
+                        <p><strong>Total elements analyzed:</strong> ${data.links.total + data.images.total + data.headings.h1 + data.headings.h2 + data.headings.h3}</p>
+                    </div>
+                `;
+
+                // Content Analysis
+                if (selectedOptions.textAnalysis || selectedOptions.headingAnalysis || selectedOptions.metaAnalysis) {
+                    html += '<div class="result-section"><h3>📊 Content Analysis</h3>';
+                    
+                    if (selectedOptions.metaAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Page Title</span>
+                                <span class="metric-value">${data.title}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Meta Description</span>
+                                <span class="metric-value">${data.description}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (selectedOptions.textAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Total Words</span>
+                                <span class="metric-value">${data.wordCount.toLocaleString()}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (selectedOptions.headingAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>H1 Headings</span>
+                                <span class="metric-value">${data.headings.h1}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>H2 Headings</span>
+                                <span class="metric-value">${data.headings.h2}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>H3 Headings</span>
+                                <span class="metric-value">${data.headings.h3}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    html += '</div>';
+                }
+
+                // Link Analysis
+                if (selectedOptions.linkAnalysis) {
+                    html += `
+                        <div class="result-section">
+                            <h3>🔗 Link Analysis</h3>
+                            <div class="metric-card">
+                                <span>Total Links</span>
+                                <span class="metric-value">${data.links.total}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Internal Links</span>
+                                <span class="metric-value">${data.links.internal}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>External Links</span>
+                                <span class="metric-value">${data.links.external}</span>
+                            </div>
+                            <div class="links-list">
+                                <strong>Sample Links:</strong>
+                                ${data.links.samples.map(link => `<div class="link-item">${link}</div>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Media Analysis
+                if (selectedOptions.imageAnalysis || selectedOptions.videoAnalysis) {
+                    html += '<div class="result-section"><h3>🖼️ Media Analysis</h3>';
+                    
+                    if (selectedOptions.imageAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Total Images</span>
+                                <span class="metric-value">${data.images.total}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Images with Alt Text</span>
+                                <span class="metric-value">${data.images.withAlt}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Images without Alt Text</span>
+                                <span class="metric-value">${data.images.withoutAlt}</span>
+                            </div>
+                            <div class="images-list">
+                                <strong>Sample Images:</strong>
+                                ${data.images.samples.map(img => `<div class="image-item">${img}</div>`).join('')}
+                            </div>
+                        `;
+                    }
+
+                    if (selectedOptions.videoAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Videos Found</span>
+                                <span class="metric-value">${data.videos}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    html += '</div>';
+                }
+
+                // Performance Analysis
+                if (selectedOptions.performanceAnalysis || selectedOptions.seoAnalysis) {
+                    html += '<div class="result-section"><h3>⚡ Performance & SEO</h3>';
+                    
+                    if (selectedOptions.performanceAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Estimated Page Size</span>
+                                <span class="metric-value">${data.performance.estimatedSize}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Analysis Time</span>
+                                <span class="metric-value">${data.loadTime}ms</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Compression</span>
+                                <span class="metric-value">${data.performance.compression}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (selectedOptions.seoAnalysis) {
+                        html += `
+                            <div class="metric-card">
+                                <span>Title Tag Present</span>
+                                <span class="metric-value">${data.seo.hasTitle ? '✅ Yes' : '❌ No'}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Meta Description Present</span>
+                                <span class="metric-value">${data.seo.hasDescription ? '✅ Yes' : '❌ No'}</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Title Length</span>
+                                <span class="metric-value">${data.seo.titleLength} chars</span>
+                            </div>
+                            <div class="metric-card">
+                                <span>Description Length</span>
+                                <span class="metric-value">${data.seo.descriptionLength} chars</span>
+                            </div>
+                        `;
+                    }
+                    
+                    html += '</div>';
+                }
+
+                this.results.innerHTML = html;
+                this.results.style.display = 'block';
+            }
+
+            getSelectedOptions() {
+                return {
+                    textAnalysis: document.getElementById('textAnalysis').checked,
+                    headingAnalysis: document.getElementById('headingAnalysis').checked,
+                    metaAnalysis: document.getElementById('metaAnalysis').checked,
+                    linkAnalysis: document.getElementById('linkAnalysis').checked,
+                    externalLinks: document.getElementById('externalLinks').checked,
+                    imageAnalysis: document.getElementById('imageAnalysis').checked,
+                    videoAnalysis: document.getElementById('videoAnalysis').checked,
+                    performanceAnalysis: document.getElementById('performanceAnalysis').checked,
+                    seoAnalysis: document.getElementById('seoAnalysis').checked
+                };
+            }
+
+            isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return string.startsWith('http://') || string.startsWith('https://');
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            showLoading() {
+                this.loading.style.display = 'block';
+                this.results.style.display = 'none';
+                this.analyzeBtn.disabled = true;
+            }
+
+            hideLoading() {
+                this.loading.style.display = 'none';
+                this.analyzeBtn.disabled = false;
+            }
+
+            showError(message) {
+                this.results.innerHTML = `<div class="error">❌ ${message}</div>`;
+                this.results.style.display = 'block';
+            }
+        }
+
+        // Initialize the analyzer when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WebsiteAnalyzer();
+        });
+    </script>
+</body>
+</html>
